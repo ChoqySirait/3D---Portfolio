@@ -7,6 +7,8 @@ import Vegetation from './world/Vegetation.js';
 import Particles from './world/Particles.js';
 import Waterfall from './world/Waterfall.js';
 import Markers from './world/Markers.js';
+import Birds from './world/Birds.js';
+import Drone from './world/Drone.js';
 import ModalUI from './ui/Modal.js';
 
 // 1. Elemen Kanvas
@@ -15,7 +17,7 @@ const canvas = document.querySelector('canvas.webgl');
 // 2. Inisialisasi UI Controller
 const modal = new ModalUI();
 
-// 3. Inisialisasi Scene
+// 3. Inisialisasi Scene Semesta
 const scene = new THREE.Scene();
 
 // 4. Modul Tata Cahaya Lingkungan
@@ -35,7 +37,11 @@ const waterfall = new Waterfall(island.container);
 // 8. Kristal Penanda Interaktif 3D
 const markers = new Markers(island.container);
 
-// 9. Dimensi Layar Responsif
+// 9. Dinamika Kehidupan Udara (Kawanan Burung & Drone Patroli)
+const birds = new Birds(scene);
+const drone = new Drone(island.container);
+
+// 10. Dimensi Layar Responsif
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
@@ -52,12 +58,12 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// 10. Kamera Perspektif
+// 11. Kamera Perspektif
 const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(9, 7, 9);
 scene.add(camera);
 
-// 11. Kontrol Orbit Interaktif
+// 12. Kontrol Orbit Interaktif
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
@@ -65,7 +71,7 @@ controls.maxPolarAngle = Math.PI / 2 - 0.05;
 controls.minDistance = 4;
 controls.maxDistance = 22;
 
-// 12. Renderer Standar HD Sinematik
+// 13. Renderer Standar HD Sinematik
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
   antialias: true,
@@ -80,13 +86,12 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.25;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-// 13. Interaksi Navigasi HUD 2D
+// 14. Interaksi Navigasi HUD 2D
 const navButtons = document.querySelectorAll('.nav-item');
 navButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     const target = btn.dataset.target;
 
-    // Atur kelas tombol aktif
     navButtons.forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
 
@@ -98,7 +103,7 @@ navButtons.forEach((btn) => {
   });
 });
 
-// 14. Sistem Raycaster untuk Deteksi Klik Objek 3D
+// 15. Sistem Raycaster untuk Deteksi Klik Objek 3D
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(-1000, -1000);
 let hoveredObject = null;
@@ -111,17 +116,15 @@ window.addEventListener('pointermove', (event) => {
 window.addEventListener('click', () => {
   if (hoveredObject) {
     const targetId = hoveredObject.userData.id;
-    // Buka jendela modal sesuai dengan zona kristal yang diklik
     modal.open(targetId);
 
-    // Sinkronkan tombol navigasi atas
     navButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.target === targetId);
     });
   }
 });
 
-// 15. Loop Animasi Render (Tick)
+// 16. Loop Animasi Render (Tick)
 const clock = new THREE.Clock();
 let previousTime = 0;
 
@@ -130,13 +133,17 @@ const tick = () => {
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 
-  // Animasi elemen 3D
+  // Animasi pulau melayang
   island.update(elapsedTime);
   particles.update(elapsedTime);
   waterfall.update(deltaTime);
   markers.update(elapsedTime);
 
-  // Kalkulasi sorot kursor mouse (Raycasting)
+  // Animasi ekosistem udara
+  birds.update(elapsedTime);
+  drone.update(elapsedTime);
+
+  // Raycasting interaktif
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(markers.interactiveObjects, false);
 
@@ -163,4 +170,4 @@ const tick = () => {
   window.requestAnimationFrame(tick);
 };
 
-tick();
+tick(); 
