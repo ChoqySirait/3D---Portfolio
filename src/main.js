@@ -9,6 +9,7 @@ import Waterfall from './world/Waterfall.js';
 import Markers from './world/Markers.js';
 import Birds from './world/Birds.js';
 import Drone from './world/Drone.js';
+import Character from './world/Character.js';
 import ModalUI from './ui/Modal.js';
 
 // 1. Elemen Kanvas
@@ -17,7 +18,7 @@ const canvas = document.querySelector('canvas.webgl');
 // 2. Inisialisasi UI Controller
 const modal = new ModalUI();
 
-// 3. Inisialisasi Scene Semesta
+// 3. Inisialisasi Scene
 const scene = new THREE.Scene();
 
 // 4. Modul Tata Cahaya Lingkungan
@@ -37,11 +38,14 @@ const waterfall = new Waterfall(island.container);
 // 8. Kristal Penanda Interaktif 3D
 const markers = new Markers(island.container);
 
-// 9. Dinamika Kehidupan Udara (Kawanan Burung & Drone Patroli)
+// 9. Dinamika Kehidupan Udara (Burung & Drone)
 const birds = new Birds(scene);
 const drone = new Drone(island.container);
 
-// 10. Dimensi Layar Responsif
+// 10. Karakter Avatar Petualang (Kirito)
+const character = new Character(island.container);
+
+// 11. Dimensi Layar Responsif
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
@@ -58,20 +62,31 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// 11. Kamera Perspektif
+// 12. Kamera Perspektif
 const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(9, 7, 9);
 scene.add(camera);
 
-// 12. Kontrol Orbit Interaktif
+// 13. Kontrol Kamera Orbit Bebas
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;
-controls.minDistance = 4;
+controls.minDistance = 3;
 controls.maxDistance = 22;
 
-// 13. Renderer Standar HD Sinematik
+// 14. Sistem Kamera POV / Chase Mode (Third-Person View)
+let isPovMode = false; // False = Kamera Orbit Bebas, True = POV Mengikuti Kirito
+
+// Tekan tombol 'C' pada keyboard untuk berganti mode kamera
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyC') {
+    isPovMode = !isPovMode;
+    controls.enabled = !isPovMode; // Matikan kontrol mouse saat mode POV aktif
+  }
+});
+
+// 15. Renderer Standar HD Sinematik
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
   antialias: true,
@@ -86,7 +101,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.25;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-// 14. Interaksi Navigasi HUD 2D
+// 16. Interaksi Navigasi HUD 2D
 const navButtons = document.querySelectorAll('.nav-item');
 navButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -103,7 +118,7 @@ navButtons.forEach((btn) => {
   });
 });
 
-// 15. Sistem Raycaster untuk Deteksi Klik Objek 3D
+// 17. Sistem Raycaster untuk Deteksi Klik Objek 3D
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(-1000, -1000);
 let hoveredObject = null;
@@ -124,7 +139,7 @@ window.addEventListener('click', () => {
   }
 });
 
-// 16. Loop Animasi Render (Tick)
+// 18. Loop Animasi Render (Tick)
 const clock = new THREE.Clock();
 let previousTime = 0;
 
@@ -133,17 +148,33 @@ const tick = () => {
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 
-  // Animasi pulau melayang
+  // Animasi elemen lingkungan pulau
   island.update(elapsedTime);
   particles.update(elapsedTime);
   waterfall.update(deltaTime);
   markers.update(elapsedTime);
-
-  // Animasi ekosistem udara
   birds.update(elapsedTime);
   drone.update(elapsedTime);
 
-  // Raycasting interaktif
+  // Update pergerakan karakter dan animasi kaki
+  character.update(deltaTime);
+
+  // Logika Kamera: Mode POV / Chase Camera vs OrbitControls
+  if (isPovMode) {
+    const charPos = character.getWorldPosition();
+
+    // Kamera ditempatkan tepat di belakang dan sedikit di atas bahu Kirito
+    const cameraOffset = new THREE.Vector3(0, 1.8, 3.2);
+    const targetCamPos = charPos.clone().add(cameraOffset);
+
+    // Perpindahan kamera secara mulus (Linear Interpolation)
+    camera.position.lerp(targetCamPos, 0.08);
+    camera.lookAt(charPos.x, charPos.y + 0.8, charPos.z);
+  } else {
+    controls.update();
+  }
+
+  // Kalkulasi sorot kursor mouse (Raycasting)
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(markers.interactiveObjects, false);
 
@@ -164,10 +195,8 @@ const tick = () => {
     }
   }
 
-  controls.update();
   renderer.render(scene, camera);
-
   window.requestAnimationFrame(tick);
 };
 
-tick(); 
+tick();
