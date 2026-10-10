@@ -25,17 +25,17 @@
 
       <nav class="hud-nav">
         <button class="nav-item active" data-target="world">World</button>
-        <button class="nav-item" data-target="about">About</button>
-        <button class="nav-item" data-target="skills">Skills</button>
-        <button class="nav-item" data-target="projects">Projects</button>
+        <button class="nav-item" data-target="about">About (West)</button>
+        <button class="nav-item" data-target="skills">Skills (North)</button>
+        <button class="nav-item" data-target="projects">Projects (East)</button>
         <button class="nav-item" data-target="contact">Connect</button>
       </nav>
     </header>
 
-    <!-- 2D HUD: Petunjuk Interaksi & Mode Kamera POV -->
+    <!-- 2D HUD: Petunjuk Kontrol Third-Person Action & Flight -->
     <div class="hud-hint">
-      <span class="hint-icon">🎮</span>
-      <span><strong>WASD:</strong> Walk | <strong>C:</strong> Toggle POV / Free Camera | <strong>Mouse:</strong> Interact</span>
+      <span class="hint-icon">🌌</span>
+      <span><strong>WASD:</strong> Move | <strong>E:</strong> Toggle Flight | <strong>Space/C:</strong> Fly Up/Down | <strong>F / Click:</strong> Slash Combo | <strong>Drag/Scroll:</strong> Orbit & Zoom</span>
     </div>
 
     <!-- 2D Modal Pop-Up Window -->
@@ -45,9 +45,7 @@
           <h2 id="modal-title" class="modal-title-text">Section Title</h2>
           <button id="modal-close-btn" class="modal-close-button">&times;</button>
         </div>
-        <div id="modal-body" class="modal-scroll-body">
-          <!-- Konten dinamis dari Modal.js dimuat di sini -->
-        </div>
+        <div id="modal-body" class="modal-scroll-body"></div>
       </div>
     </div>
 
