@@ -6,7 +6,7 @@
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: #0a0f16;
+  background-color: #04070d;
   color: #f1f5f9;
   overflow: hidden;
   -webkit-user-select: none;
@@ -32,15 +32,15 @@ body {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
   padding: 10px 24px;
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(10, 15, 26, 0.75);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   z-index: 10;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
 }
 
 .brand-logo {
@@ -60,7 +60,7 @@ body {
 
 .hud-nav {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .nav-item {
@@ -68,7 +68,7 @@ body {
   border: none;
   color: #94a3b8;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
   padding: 8px 16px;
   border-radius: 999px;
@@ -82,12 +82,116 @@ body {
 }
 
 .nav-item.active {
-  color: #0f172a;
+  color: #04070d;
   background: #38bdf8;
+  font-weight: 600;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+/* 3. Top Right Realm Status Card */
+.hud-status-card {
+  position: fixed;
+  top: 24px;
+  right: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  z-index: 10;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(10, 15, 26, 0.65);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.status-pulse {
+  width: 8px;
+  height: 8px;
+  background-color: #4ade80;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #4ade80;
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.flight-badge {
+  font-size: 0.72rem;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 3px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   font-weight: 600;
 }
 
-/* 3. Bottom Hint */
+/* 4. Spatial Proximity Notification */
+.proximity-prompt {
+  position: fixed;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 22px;
+  background: rgba(15, 23, 42, 0.85);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 14px;
+  z-index: 15;
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.proximity-prompt.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(15px);
+}
+
+.proximity-icon {
+  font-size: 1.2rem;
+}
+
+.proximity-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.proximity-key {
+  font-size: 0.72rem;
+  color: #38bdf8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.proximity-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+/* 5. Bottom Hint */
 .hud-hint {
   position: fixed;
   bottom: 24px;
@@ -96,9 +200,9 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: rgba(15, 23, 42, 0.5);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: rgba(10, 15, 26, 0.65);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   font-size: 0.82rem;
@@ -106,16 +210,16 @@ body {
   z-index: 10;
 }
 
-/* 4. Modal Window (Pop-Up) */
+/* 6. Modal Pop-up */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(5, 8, 15, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(4, 7, 13, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -133,14 +237,14 @@ body {
 
 .modal-container {
   width: 90%;
-  max-width: 780px;
-  max-height: 82vh;
-  background: rgba(15, 23, 42, 0.88);
+  max-width: 800px;
+  max-height: 84vh;
+  background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
 
@@ -179,7 +283,7 @@ body {
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-/* 5. Modal Contents Styles */
+/* Modal Inner Contents */
 .modal-section {
   display: flex;
   flex-direction: column;
@@ -215,10 +319,10 @@ body {
   font-weight: 600;
 }
 
-/* Skills Grid */
+/* Skills */
 .skills-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 20px;
 }
 
@@ -250,7 +354,7 @@ body {
   color: #94a3b8;
 }
 
-/* Projects Grid */
+/* Projects */
 .projects-grid {
   display: flex;
   flex-direction: column;
@@ -268,10 +372,6 @@ body {
 .project-card:hover {
   border-color: rgba(56, 189, 248, 0.4);
   transform: translateY(-2px);
-}
-
-.project-card-header {
-  margin-bottom: 8px;
 }
 
 .project-category-tag {
@@ -300,7 +400,7 @@ body {
   font-size: 0.84rem;
   color: #94a3b8;
   margin-bottom: 14px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   padding: 8px 12px;
   border-radius: 8px;
   border-left: 3px solid #4ade80;
@@ -324,7 +424,7 @@ body {
 .project-link-btn {
   display: inline-block;
   background: #38bdf8;
-  color: #0f172a;
+  color: #04070d;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.84rem;
@@ -343,7 +443,7 @@ body {
   font-style: italic;
 }
 
-/* Contact Styles */
+/* Contact */
 .contact-center {
   text-align: center;
   align-items: center;

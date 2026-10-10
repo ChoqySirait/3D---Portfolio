@@ -24,7 +24,7 @@
       </div>
 
       <nav class="hud-nav">
-        <button class="nav-item active" data-target="world">World</button>
+        <button class="nav-item active" data-target="world">World Hub</button>
         <button class="nav-item" data-target="about">About (West)</button>
         <button class="nav-item" data-target="skills">Skills (North)</button>
         <button class="nav-item" data-target="projects">Projects (East)</button>
@@ -32,10 +32,28 @@
       </nav>
     </header>
 
-    <!-- 2D HUD: Petunjuk Kontrol Third-Person Action & Flight -->
+    <!-- 2D HUD: Status Realm & Mode Penjelajah (Pojok Kanan Atas) -->
+    <div class="hud-status-card">
+      <div class="status-indicator">
+        <span class="status-pulse"></span>
+        <span class="status-text" id="status-location">Central Plaza</span>
+      </div>
+      <div class="flight-badge" id="flight-badge">Walking Mode</div>
+    </div>
+
+    <!-- 2D HUD: Spatial Proximity Notification (Muncul otomatis saat Kirito mendekati beacon) -->
+    <div id="proximity-prompt" class="proximity-prompt hidden">
+      <div class="proximity-icon">⚡</div>
+      <div class="proximity-content">
+        <span class="proximity-key">Press F or Click</span>
+        <span class="proximity-text" id="proximity-title">Inspect Landmark</span>
+      </div>
+    </div>
+
+    <!-- 2D HUD: Petunjuk Kontrol Interaksi -->
     <div class="hud-hint">
       <span class="hint-icon">🌌</span>
-      <span><strong>WASD:</strong> Move | <strong>E:</strong> Toggle Flight | <strong>Space/C:</strong> Fly Up/Down | <strong>F / Click:</strong> Slash Combo | <strong>Drag/Scroll:</strong> Orbit & Zoom</span>
+      <span><strong>WASD:</strong> Move | <strong>E:</strong> Flight Mode | <strong>Space/C:</strong> Up/Down | <strong>F / Click:</strong> Slash / Inspect | <strong>Drag/Scroll:</strong> Orbit & Zoom</span>
     </div>
 
     <!-- 2D Modal Pop-Up Window -->

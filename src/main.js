@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import gsap from 'gsap';
 import Environment from './world/Environment.js';
 import Island from './world/Island.js';
 import Structures from './world/Structures.js';
@@ -11,6 +12,7 @@ import Birds from './world/Birds.js';
 import Drone from './world/Drone.js';
 import Character from './world/Character.js';
 import BlackHole from './world/BlackHole.js';
+import Starfield from './world/Starfield.js';
 import ModalUI from './ui/Modal.js';
 
 // 1. Kanvas WebGL
@@ -22,34 +24,40 @@ const modal = new ModalUI();
 // 3. Semesta Scene
 const scene = new THREE.Scene();
 
-// 4. Modul Lingkungan & Pencahayaan
+// 4. Kabut Atmosferik Kosmis (Memberikan kedalaman perspektif tanpa batas)
+scene.fog = new THREE.FogExp2(0x04070d, 0.012);
+
+// 5. Modul Tata Cahaya Alami
 const environment = new Environment(scene);
 
-// 5. Lubang Hitam Kosmis di Dasar Semesta
+// 6. Gugusan Bintang Kosmis (1.400 Bintang 3D)
+const starfield = new Starfield(scene);
+
+// 7. Singularitas Lubang Hitam di Dasar Semesta
 const blackHole = new BlackHole(scene);
 
-// 6. Kepulauan Terapung Raksasa (Archipelago)
+// 8. Kepulauan Terapung Raksasa (Archipelago)
 const island = new Island(scene);
 
-// 7. Bangunan & Vegetasi
+// 9. Fasilitas Bangunan & Vegetasi
 const structures = new Structures(island.container);
 const vegetation = new Vegetation(island.container);
 
-// 8. Partikel Kosmis & Air Terjun
+// 10. Partikel Kosmis & Air Terjun
 const particles = new Particles(island.container);
 const waterfall = new Waterfall(island.container);
 
-// 9. Kristal Penanda Titik Portofolio
+// 11. Kristal Penanda Titik Portofolio
 const markers = new Markers(island.container);
 
-// 10. Dinamika Udara (Burung & Drone)
+// 12. Dinamika Udara (Burung & Drone)
 const birds = new Birds(scene);
 const drone = new Drone(island.container);
 
-// 11. Karakter Pemain (Kirito dengan Sayap & Tebasan Pedang)
+// 13. Karakter Pemain (Kirito)
 const character = new Character(island.container);
 
-// 12. Dimensi Layar Responsif
+// 14. Dimensi Layar Responsif
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
@@ -66,24 +74,24 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// 13. Kamera Perspektif
-const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 200);
-camera.position.set(0, 4.5, 9.0);
+// 15. Kamera Perspektif
+const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 250);
+camera.position.set(0, 4.2, 8.8);
 scene.add(camera);
 
-// 14. Kontrol Kamera Orbit Mengikuti Karakter (Spring-Arm)
+// 16. Kontrol Kamera Orbit Spring-Arm
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
-controls.maxPolarAngle = Math.PI - 0.08; // Memberikan kebebasan melihat ke bawah menuju black hole
-controls.minDistance = 2.0;
+controls.minPolarAngle = 0.15;
+controls.maxPolarAngle = Math.PI * 0.58;
+controls.minDistance = 2.2;
 controls.maxDistance = 45.0;
 
 const initialCharPos = character.getWorldPosition();
-controls.target.copy(initialCharPos).add(new THREE.Vector3(0, 0.8, 0));
-let previousCharPos = initialCharPos.clone();
+controls.target.set(initialCharPos.x, initialCharPos.y + 0.8, initialCharPos.z);
 
-// 15. Renderer WebGL HD Sinematik
+// 17. Renderer WebGL HD Sinematik
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
   antialias: true,
@@ -98,7 +106,64 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.35;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-// 16. Navigasi Atas HUD 2D
+// 18. Elemen HUD Interaktif
+const statusLocation = document.getElementById('status-location');
+const flightBadge = document.getElementById('flight-badge');
+const proximityPrompt = document.getElementById('proximity-prompt');
+const proximityTitle = document.getElementById('proximity-title');
+let currentNearbyBeacon = null;
+
+// Koordinat Target Fast-Travel Sinematik untuk tiap pulau
+const islandWaypoints = {
+  world:    { x: 0,   y: 0.38, z: 0,   camY: 4.5, camDist: 9.0,  name: 'Central Plaza' },
+  about:    { x: -13, y: 0.2,  z: 0,   camY: 4.0, camDist: 8.5,  name: 'Cyber Sanctuary (West)' },
+  skills:   { x: 0,   y: 0.8,  z: -14, camY: 4.8, camDist: 9.5,  name: 'Skills Spire (North)' },
+  projects: { x: 13,  y: 0.1,  z: 0,   camY: 4.2, camDist: 8.8,  name: 'Oasis Forge (East)' },
+  contact:  { x: 0,   y: 0.38, z: 3.2, camY: 3.8, camDist: 7.5,  name: 'Central Beacon' },
+};
+
+// 19. Navigasi Fast-Travel Sinematik dengan GSAP
+let isCinematicFlying = false;
+
+function flyToIsland(targetKey) {
+  const waypoint = islandWaypoints[targetKey];
+  if (!waypoint) return;
+
+  isCinematicFlying = true;
+
+  // Animasi menerbangkan karakter dan memindahkan target fokus kamera secara mulus
+  gsap.to(character.mesh.position, {
+    x: waypoint.x,
+    y: waypoint.y,
+    z: waypoint.z,
+    duration: 1.6,
+    ease: 'power3.inOut',
+  });
+
+  gsap.to(controls.target, {
+    x: waypoint.x,
+    y: waypoint.y + 0.8,
+    z: waypoint.z,
+    duration: 1.6,
+    ease: 'power3.inOut',
+  });
+
+  // Posisikan kamera di sudut pandang ideal pulau tersebut
+  gsap.to(camera.position, {
+    x: waypoint.x,
+    y: waypoint.y + waypoint.camY,
+    z: waypoint.z + waypoint.camDist,
+    duration: 1.8,
+    ease: 'power3.inOut',
+    onComplete: () => {
+      isCinematicFlying = false;
+      if (targetKey !== 'world') {
+        modal.open(targetKey);
+      }
+    },
+  });
+}
+
 const navButtons = document.querySelectorAll('.nav-item');
 navButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -109,17 +174,17 @@ navButtons.forEach((btn) => {
 
     if (target === 'world') {
       modal.close();
+      flyToIsland('world');
     } else {
-      modal.open(target);
+      flyToIsland(target);
     }
   });
 });
 
-// 17. Raycaster & Logika Klik vs Drag Kamera
+// 20. Raycaster & Logika Klik vs Drag
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(-1000, -1000);
 let hoveredObject = null;
-
 let isMouseDragging = false;
 let pointerDownCoord = { x: 0, y: 0 };
 
@@ -144,17 +209,21 @@ window.addEventListener('click', () => {
 
   if (hoveredObject) {
     const targetId = hoveredObject.userData.id;
-    modal.open(targetId);
+    flyToIsland(targetId);
 
     navButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.target === targetId);
     });
+  } else if (currentNearbyBeacon) {
+    // Jika sedang berada dekat landmark dan klik layar, buka modal
+    modal.open(currentNearbyBeacon.id);
   } else {
+    // Tebas pedang ganda
     character.triggerAttack();
   }
 });
 
-// 18. Loop Animasi Render (Tick)
+// 21. Loop Animasi Render (Tick)
 const clock = new THREE.Clock();
 let previousTime = 0;
 
@@ -163,10 +232,9 @@ const tick = () => {
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 
-  // Animasi Singularitas Black Hole
+  // Update elemen dunia semesta
+  starfield.update(elapsedTime);
   blackHole.update(elapsedTime, deltaTime);
-
-  // Animasi Kepulauan & Ekosistem
   island.update(elapsedTime);
   particles.update(elapsedTime);
   waterfall.update(deltaTime);
@@ -174,20 +242,62 @@ const tick = () => {
   birds.update(elapsedTime);
   drone.update(elapsedTime);
 
-  // Pergerakan Karakter (Daratan / Penerbangan & Serangan)
-  character.update(deltaTime, camera, elapsedTime);
+  // Pergerakan Karakter
+  if (!isCinematicFlying) {
+    character.update(deltaTime, camera, elapsedTime);
 
-  // Kamera Mengikuti Kirito
-  const currentCharPos = character.getWorldPosition();
-  const deltaCharMovement = currentCharPos.clone().sub(previousCharPos);
+    // Sinkronisasi kamera Spring-Arm mengikuti langkah Kirito
+    const currentCharPos = character.getWorldPosition();
+    const targetChest = new THREE.Vector3(currentCharPos.x, currentCharPos.y + 0.8, currentCharPos.z);
+    const deltaTarget = targetChest.clone().sub(controls.target);
 
-  camera.position.add(deltaCharMovement);
-  controls.target.copy(currentCharPos).add(new THREE.Vector3(0, 0.8, 0));
-  previousCharPos.copy(currentCharPos);
+    camera.position.add(deltaTarget);
+    controls.target.copy(targetChest);
+  }
 
   controls.update();
 
-  // Raycasting Kristal
+  // 22. Update Indikator HUD & Deteksi Jarak Spasial (Proximity Detection)
+  flightBadge.textContent = character.isFlying ? 'Flying (Alfheim)' : 'Walking Mode';
+  flightBadge.style.color = character.isFlying ? '#38bdf8' : '#4ade80';
+
+  const charPos = character.getWorldPosition();
+
+  // Identifikasi pulau terdekat untuk status lokasi
+  let nearestZone = 'Cosmic Void';
+  let minZoneDist = Infinity;
+
+  Object.entries(islandWaypoints).forEach(([key, wp]) => {
+    const dist = Math.hypot(charPos.x - wp.x, charPos.z - wp.z);
+    if (dist < minZoneDist) {
+      minZoneDist = dist;
+      nearestZone = wp.name;
+    }
+  });
+  statusLocation.textContent = nearestZone;
+
+  // Deteksi jarak ke kristal penanda terdekat (dalam radius 3.8 meter)
+  let foundNearby = null;
+  markers.markersList.forEach((beacon) => {
+    const beaconWorldPos = new THREE.Vector3();
+    beacon.group.getWorldPosition(beaconWorldPos);
+    const dist = charPos.distanceTo(beaconWorldPos);
+
+    if (dist < 3.8) {
+      foundNearby = beacon.crystal.userData;
+    }
+  });
+
+  if (foundNearby) {
+    currentNearbyBeacon = foundNearby;
+    proximityTitle.textContent = `Inspect ${foundNearby.label}`;
+    proximityPrompt.classList.remove('hidden');
+  } else {
+    currentNearbyBeacon = null;
+    proximityPrompt.classList.add('hidden');
+  }
+
+  // 23. Raycasting Sorot Kursor
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(markers.interactiveObjects, false);
 
