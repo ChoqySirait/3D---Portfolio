@@ -1,14 +1,12 @@
 import * as THREE from 'three';
 
 /**
- * Kelas Character (Kirito Action & Flight Avatar)
- * Fitur:
- * - Mode Jalan/Lari di daratan dengan gravitasi & lompatan (WASD, Shift, Space)
- * - Mode Terbang Bebas (Free Flight Mode - Tombol E):
- *   * Membentangkan sepasang sayap cahaya neon di punggung
- *   * Gravitasi dinonaktifkan; Space = terbang naik, C = terbang turun
- *   * Bebas meluncur mengarungi kepulauan dan menjelajahi lubang hitam
- * - Serangan Tebasan Pedang Ganda dengan Sabit Cahaya Berpendar (Dual Slash Arc Trails)
+ * Kelas Character (Kirito RPG Action & Flight Controller)
+ * Menampung:
+ * - Navigasi relatif kamera
+ * - Deteksi batas daratan kepulauan dan rintangan fisik (Kabin & Spire)
+ * - Mode terbang bebas (E)
+ * - Kombo serangan pedang berbobot
  */
 export default class Character {
   constructor(islandContainer) {
@@ -17,30 +15,23 @@ export default class Character {
     this.mesh = new THREE.Group();
     this.container.add(this.mesh);
 
-    // Titik awal di tengah alun-alun pulau utama
-    this.mesh.position.set(0, 0.35, 0);
+    this.mesh.position.set(0, 0.38, 0);
 
-    // Konfigurasi kecepatan
     this.walkSpeed = 4.2;
-    this.runSpeed = 8.0;
-    this.flyHorizontalSpeed = 10.5;
+    this.runSpeed = 8.2;
+    this.flySpeed = 10.5;
     this.flyVerticalSpeed = 7.0;
 
-    // Sistem Fisika Darat
     this.velocityY = 0;
     this.gravity = -22;
     this.jumpForce = 8.5;
     this.isGrounded = true;
 
-    // Status Penerbangan (Flight Mode)
     this.isFlying = false;
-
-    // Status Serangan & Efek Sabit Pedang
     this.isAttacking = false;
     this.attackTimer = 0;
     this.attackDuration = 0.32;
 
-    // Input Tombol
     this.keys = {
       forward: false,
       backward: false,
@@ -77,48 +68,48 @@ export default class Character {
       flatShading: true,
     });
 
-    // Pedang 1 (Elucidator - Baja Mengkilap)
     this.sword1Mat = new THREE.MeshStandardMaterial({
       color: 0xf1f5f9,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.2,
       metalness: 0.9,
       roughness: 0.15,
     });
 
-    // Pedang 2 (Dark Repulser - Pendaran Cyan)
     this.sword2Mat = new THREE.MeshStandardMaterial({
       color: 0x22d3ee,
       emissive: 0x0891b2,
-      emissiveIntensity: 0.9,
-      metalness: 0.5,
+      emissiveIntensity: 0.8,
+      metalness: 0.4,
     });
 
-    // 1. Badan
+    this.torsoGroup = new THREE.Group();
+    this.torsoGroup.position.y = 0.52;
+    this.mesh.add(this.torsoGroup);
+
     const torsoGeo = new THREE.BoxGeometry(0.38, 0.5, 0.24);
     this.torso = new THREE.Mesh(torsoGeo, coatMat);
-    this.torso.position.y = 0.52;
     this.torso.castShadow = true;
-    this.mesh.add(this.torso);
+    this.torsoGroup.add(this.torso);
 
     const coatTailGeo = new THREE.BoxGeometry(0.36, 0.36, 0.05);
     const coatTail = new THREE.Mesh(coatTailGeo, coatMat);
-    coatTail.position.set(0, 0.24, -0.11);
+    coatTail.position.set(0, -0.28, -0.11);
     coatTail.rotation.x = 0.18;
-    this.mesh.add(coatTail);
+    this.torsoGroup.add(coatTail);
 
-    // 2. Kepala & Rambut
     const headGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
     const head = new THREE.Mesh(headGeo, skinMat);
-    head.position.set(0, 0.9, 0);
+    head.position.set(0, 0.38, 0);
     head.castShadow = true;
-    this.mesh.add(head);
+    this.torsoGroup.add(head);
 
     const hairGeo = new THREE.ConeGeometry(0.19, 0.22, 5);
     const hair = new THREE.Mesh(hairGeo, hairMat);
-    hair.position.set(0, 1.06, -0.02);
+    hair.position.set(0, 0.54, -0.02);
     hair.rotation.x = -0.2;
-    this.mesh.add(hair);
+    this.torsoGroup.add(hair);
 
-    // 3. Kaki Kiri & Kanan
     const legGeo = new THREE.BoxGeometry(0.12, 0.36, 0.12);
     legGeo.translate(0, -0.18, 0);
 
@@ -132,21 +123,19 @@ export default class Character {
     this.rightLeg.castShadow = true;
     this.mesh.add(this.rightLeg);
 
-    // 4. Lengan Kiri & Kanan
     const armGeo = new THREE.BoxGeometry(0.11, 0.42, 0.11);
     armGeo.translate(0, -0.21, 0);
 
     this.leftArm = new THREE.Mesh(armGeo, coatMat);
-    this.leftArm.position.set(-0.27, 0.72, 0);
+    this.leftArm.position.set(-0.27, 0.2, 0);
     this.leftArm.castShadow = true;
-    this.mesh.add(this.leftArm);
+    this.torsoGroup.add(this.leftArm);
 
     this.rightArm = new THREE.Mesh(armGeo, coatMat);
-    this.rightArm.position.set(0.27, 0.72, 0);
+    this.rightArm.position.set(0.27, 0.2, 0);
     this.rightArm.castShadow = true;
-    this.mesh.add(this.rightArm);
+    this.torsoGroup.add(this.rightArm);
 
-    // 5. Bilah Pedang di Tangan
     const bladeGeo = new THREE.BoxGeometry(0.04, 0.88, 0.03);
     bladeGeo.translate(0, 0.4, 0);
 
@@ -162,16 +151,15 @@ export default class Character {
   }
 
   createWings() {
-    // Sayap Cahaya Ethereal (Gaya Alfheim Kirito)
     this.wingsGroup = new THREE.Group();
-    this.wingsGroup.position.set(0, 0.65, -0.14);
-    this.wingsGroup.visible = false; // Tersembunyi saat di darat
+    this.wingsGroup.position.set(0, 0.15, -0.14);
+    this.wingsGroup.visible = false;
 
     const wingShape = new THREE.Shape();
     wingShape.moveTo(0, 0);
-    wingShape.lineTo(1.4, 0.8);
-    wingShape.lineTo(1.8, 0.2);
-    wingShape.lineTo(1.0, -0.4);
+    wingShape.lineTo(1.5, 0.8);
+    wingShape.lineTo(1.9, 0.2);
+    wingShape.lineTo(1.1, -0.4);
     wingShape.lineTo(0, 0);
 
     const wingGeo = new THREE.ShapeGeometry(wingShape);
@@ -183,26 +171,22 @@ export default class Character {
       blending: THREE.AdditiveBlending,
     });
 
-    // Sayap Kanan
     this.rightWing = new THREE.Mesh(wingGeo, wingMat);
     this.wingsGroup.add(this.rightWing);
 
-    // Sayap Kiri (Dibalik)
     this.leftWing = new THREE.Mesh(wingGeo, wingMat);
     this.leftWing.scale.x = -1;
     this.wingsGroup.add(this.leftWing);
 
-    this.mesh.add(this.wingsGroup);
+    this.torsoGroup.add(this.wingsGroup);
   }
 
   createSlashTrails() {
-    // Efek Sabit Cahaya Tebasan (Slash Arc Ribbons)
     this.slashGroup = new THREE.Group();
-    this.slashGroup.position.set(0, 0.65, 0.3);
+    this.slashGroup.position.set(0, 0.65, 0.45);
     this.slashGroup.visible = false;
 
-    // Sabit Cahaya Tebasan Kanan (Cyan Neon)
-    const arcGeo1 = new THREE.RingGeometry(0.8, 1.35, 24, 1, 0, Math.PI * 0.8);
+    const arcGeo1 = new THREE.RingGeometry(0.8, 1.4, 24, 1, 0, Math.PI * 0.85);
     this.slashMat1 = new THREE.MeshBasicMaterial({
       color: 0x22d3ee,
       side: THREE.DoubleSide,
@@ -211,11 +195,10 @@ export default class Character {
       blending: THREE.AdditiveBlending,
     });
     this.slash1 = new THREE.Mesh(arcGeo1, this.slashMat1);
-    this.slash1.rotation.set(-Math.PI * 0.2, 0, -Math.PI * 0.3);
+    this.slash1.rotation.set(-Math.PI * 0.2, 0, -Math.PI * 0.25);
     this.slashGroup.add(this.slash1);
 
-    // Sabit Cahaya Tebasan Kiri (Putih-Perak)
-    const arcGeo2 = new THREE.RingGeometry(0.85, 1.4, 24, 1, 0, Math.PI * 0.8);
+    const arcGeo2 = new THREE.RingGeometry(0.85, 1.45, 24, 1, 0, Math.PI * 0.85);
     this.slashMat2 = new THREE.MeshBasicMaterial({
       color: 0xf8fafc,
       side: THREE.DoubleSide,
@@ -224,7 +207,7 @@ export default class Character {
       blending: THREE.AdditiveBlending,
     });
     this.slash2 = new THREE.Mesh(arcGeo2, this.slashMat2);
-    this.slash2.rotation.set(Math.PI * 0.25, 0, Math.PI * 0.4);
+    this.slash2.rotation.set(Math.PI * 0.25, 0, Math.PI * 0.35);
     this.slashGroup.add(this.slash2);
 
     this.mesh.add(this.slashGroup);
@@ -239,10 +222,7 @@ export default class Character {
       if (code === 'KeyD' || code === 'ArrowRight') this.keys.right = true;
       if (code === 'ShiftLeft' || code === 'ShiftRight') this.keys.sprint = true;
 
-      // Kontrol Penerbangan
-      if (code === 'KeyE') {
-        this.toggleFlight();
-      }
+      if (code === 'KeyE') this.toggleFlight();
 
       if (code === 'Space') {
         if (this.isFlying) {
@@ -254,15 +234,10 @@ export default class Character {
       }
 
       if (code === 'KeyC') {
-        if (this.isFlying) {
-          this.keys.flyDown = true;
-        }
+        if (this.isFlying) this.keys.flyDown = true;
       }
 
-      // Tombol Serang F
-      if (code === 'KeyF') {
-        this.triggerAttack();
-      }
+      if (code === 'KeyF') this.triggerAttack();
     });
 
     window.addEventListener('keyup', (e) => {
@@ -284,9 +259,8 @@ export default class Character {
     if (this.isFlying) {
       this.isGrounded = false;
       this.velocityY = 0;
-      // Jika toggle terbang saat berada di tanah, beri dorongan melayang awal
-      if (this.mesh.position.y <= 0.6) {
-        this.mesh.position.y = 1.8;
+      if (this.mesh.position.y <= 1.0) {
+        this.mesh.position.y = 2.0;
       }
     }
   }
@@ -298,46 +272,80 @@ export default class Character {
       this.slashGroup.visible = true;
       this.slashMat1.opacity = 0.95;
       this.slashMat2.opacity = 0.95;
+
+      this.sword1Mat.emissiveIntensity = 2.0;
+      this.sword2Mat.emissiveIntensity = 2.5;
+      return true; // Berhasil memulai serangan
     }
+    return false;
+  }
+
+  getGroundHeight(x, z) {
+    if (Math.hypot(x, z) <= 6.5) return 0.38;
+    if (Math.hypot(x - (-13), z) <= 4.2) return 0.18;
+    if (Math.hypot(x - 13, z) <= 5.0) return 0.08;
+    if (Math.hypot(x, z - (-14)) <= 4.5) return 0.78;
+
+    if (x >= -13 && x <= -6.5 && Math.abs(z) <= 1.4) return 0.2;
+    if (x >= 6.5 && x <= 13 && Math.abs(z) <= 1.4) return 0.2;
+    if (z >= -14 && z <= -6.5 && Math.abs(x) <= 1.4) return 0.3;
+
+    return -999;
+  }
+
+  // Deteksi Rintangan Bangunan Fisik (Kabin di -13,0 dan Spire di 0,-14)
+  checkObstacleCollision(x, z) {
+    // 1. Kabin Kaca Barat (-13, 0)
+    if (Math.abs(x - (-13)) < 1.6 && Math.abs(z) < 1.4) return true;
+
+    // 2. Menara Spire Utara (0, -14)
+    if (Math.hypot(x, z - (-14)) < 0.8) return true;
+
+    return false;
   }
 
   update(deltaTime, camera, elapsedTime) {
-    // 1. Input Arah Horizontal
-    const inputDir = new THREE.Vector3();
-    if (this.keys.forward) inputDir.z -= 1;
-    if (this.keys.backward) inputDir.z += 1;
-    if (this.keys.left) inputDir.x -= 1;
-    if (this.keys.right) inputDir.x += 1;
+    const camForward = new THREE.Vector3();
+    camera.getWorldDirection(camForward);
+    camForward.y = 0;
+    camForward.normalize();
 
-    const isMoving = inputDir.lengthSq() > 0;
+    const camRight = new THREE.Vector3();
+    camRight.crossVectors(camForward, new THREE.Vector3(0, 1, 0)).normalize();
+
+    const moveDir = new THREE.Vector3();
+    if (this.keys.forward) moveDir.add(camForward);
+    if (this.keys.backward) moveDir.sub(camForward);
+    if (this.keys.right) moveDir.add(camRight);
+    if (this.keys.left) moveDir.sub(camRight);
+
+    const isMoving = moveDir.lengthSq() > 0;
     const currentSpeed = this.isFlying
-      ? (this.keys.sprint ? this.flyHorizontalSpeed * 1.5 : this.flyHorizontalSpeed)
+      ? (this.keys.sprint ? this.flySpeed * 1.5 : this.flySpeed)
       : (this.keys.sprint ? this.runSpeed : this.walkSpeed);
 
     if (isMoving) {
-      inputDir.normalize();
+      moveDir.normalize();
 
-      // Selaraskan gerak maju dengan rotasi horizontal kamera
-      let moveAngle = Math.atan2(inputDir.x, inputDir.z);
-      if (camera) {
-        const cameraYaw = Math.atan2(
-          camera.position.x - this.mesh.position.x,
-          camera.position.z - this.mesh.position.z
-        );
-        moveAngle += cameraYaw + Math.PI;
+      const nextX = this.mesh.position.x + moveDir.x * currentSpeed * deltaTime;
+      const nextZ = this.mesh.position.z + moveDir.z * currentSpeed * deltaTime;
+
+      if (!this.isFlying) {
+        const targetGround = this.getGroundHeight(nextX, nextZ);
+        const hitsObstacle = this.checkObstacleCollision(nextX, nextZ);
+
+        // Hanya melangkah jika ada daratan dan tidak menabrak gedung kabin/spire
+        if (targetGround !== -999 && !hitsObstacle) {
+          this.mesh.position.x = nextX;
+          this.mesh.position.z = nextZ;
+        }
+      } else {
+        this.mesh.position.x = THREE.MathUtils.clamp(nextX, -28, 28);
+        this.mesh.position.z = THREE.MathUtils.clamp(nextZ, -30, 20);
       }
 
-      const moveX = Math.sin(moveAngle) * currentSpeed * deltaTime;
-      const moveZ = Math.cos(moveAngle) * currentSpeed * deltaTime;
-
-      this.mesh.position.x += moveX;
-      this.mesh.position.z += moveZ;
-
-      // Batasi area jelajah agar tidak hilang dari semesta
-      this.mesh.position.x = THREE.MathUtils.clamp(this.mesh.position.x, -28, 28);
-      this.mesh.position.z = THREE.MathUtils.clamp(this.mesh.position.z, -30, 20);
-
-      this.mesh.rotation.y = THREE.MathUtils.lerp(this.mesh.rotation.y, moveAngle, 0.22);
+      const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+      this.mesh.rotation.y = THREE.MathUtils.lerp(this.mesh.rotation.y, targetAngle, 0.25);
 
       if (!this.isFlying) {
         this.walkCycle += deltaTime * (this.keys.sprint ? 19 : 12);
@@ -350,33 +358,24 @@ export default class Character {
       this.rightLeg.rotation.x = THREE.MathUtils.lerp(this.rightLeg.rotation.x, 0, 0.15);
     }
 
-    // 2. Dinamika Vertikal (Terbang vs Darat)
     if (this.isFlying) {
-      // Gerakan Naik / Turun saat terbang
-      if (this.keys.flyUp) {
-        this.mesh.position.y += this.flyVerticalSpeed * deltaTime;
-      }
-      if (this.keys.flyDown) {
-        this.mesh.position.y -= this.flyVerticalSpeed * deltaTime;
-      }
+      if (this.keys.flyUp) this.mesh.position.y += this.flyVerticalSpeed * deltaTime;
+      if (this.keys.flyDown) this.mesh.position.y -= this.flyVerticalSpeed * deltaTime;
 
-      // Osilasi sayap mengepak bercahaya
       const wingFlap = Math.sin(elapsedTime * 9) * 0.45;
       this.rightWing.rotation.y = wingFlap;
       this.leftWing.rotation.y = -wingFlap;
 
-      // Batas jelajah ketinggian (bisa menyelam hingga mendekati cincin black hole di -15)
-      this.mesh.position.y = THREE.MathUtils.clamp(this.mesh.position.y, -14, 26);
-
-      // Kaki rileks menggantung saat terbang
+      this.mesh.position.y = THREE.MathUtils.clamp(this.mesh.position.y, -12, 28);
       this.leftLeg.rotation.x = 0.2;
       this.rightLeg.rotation.x = 0.25;
     } else {
-      // Gravitasi daratan
+      const currentGround = this.getGroundHeight(this.mesh.position.x, this.mesh.position.z);
+      const groundLevel = currentGround !== -999 ? currentGround : 0.38;
+
       this.velocityY += this.gravity * deltaTime;
       this.mesh.position.y += this.velocityY * deltaTime;
 
-      const groundLevel = 0.35;
       if (this.mesh.position.y <= groundLevel) {
         this.mesh.position.y = groundLevel;
         this.velocityY = 0;
@@ -384,33 +383,34 @@ export default class Character {
       }
     }
 
-    // 3. Animasi Kombo Tebasan Sabit Pedang (Dual Slash FX)
     if (this.isAttacking) {
       this.attackTimer += deltaTime;
       const progress = this.attackTimer / this.attackDuration;
 
-      // Ayunan kedua lengan
+      this.torsoGroup.rotation.y = Math.sin(progress * Math.PI) * 0.65;
+
       const slashAngle = Math.sin(progress * Math.PI) * 2.2;
       this.rightArm.rotation.x = slashAngle;
       this.rightArm.rotation.z = -slashAngle * 0.55;
       this.leftArm.rotation.x = slashAngle;
       this.leftArm.rotation.z = slashAngle * 0.55;
 
-      // Putar dan pudar sabit cahaya tebasan
       this.slashGroup.rotation.y = progress * Math.PI * 0.6;
       const fade = 1 - progress;
       this.slashMat1.opacity = fade;
       this.slashMat2.opacity = fade;
 
-      // Dorongan langkah maju (lunge impulse) agar serangan berbobot
-      const forwardDir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.mesh.rotation.y);
-      this.mesh.position.addScaledVector(forwardDir, deltaTime * 3.5);
+      const forwardVec = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.mesh.rotation.y);
+      this.mesh.position.addScaledVector(forwardVec, deltaTime * 4.0);
 
       if (progress >= 1) {
         this.isAttacking = false;
         this.slashGroup.visible = false;
+        this.torsoGroup.rotation.y = 0;
         this.rightArm.rotation.set(0, 0, 0);
         this.leftArm.rotation.set(0, 0, 0);
+        this.sword1Mat.emissiveIntensity = 0.2;
+        this.sword2Mat.emissiveIntensity = 0.8;
       }
     } else if (isMoving && !this.isFlying) {
       const armSwing = Math.sin(this.walkCycle) * 0.6;
@@ -419,6 +419,7 @@ export default class Character {
     } else {
       this.rightArm.rotation.x = THREE.MathUtils.lerp(this.rightArm.rotation.x, 0, 0.1);
       this.leftArm.rotation.x = THREE.MathUtils.lerp(this.leftArm.rotation.x, 0, 0.1);
+      this.torsoGroup.rotation.y = THREE.MathUtils.lerp(this.torsoGroup.rotation.y, 0, 0.1);
     }
   }
 

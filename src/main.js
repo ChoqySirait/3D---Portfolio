@@ -11,53 +11,51 @@ import Markers from './world/Markers.js';
 import Birds from './world/Birds.js';
 import Drone from './world/Drone.js';
 import Character from './world/Character.js';
+import Enemy from './world/Enemy.js';
 import BlackHole from './world/BlackHole.js';
 import Starfield from './world/Starfield.js';
+import AudioManager from './utils/Audio.js';
 import ModalUI from './ui/Modal.js';
 
-// 1. Kanvas WebGL
+// 1. Kanvas WebGL & Manajer Sistem
 const canvas = document.querySelector('canvas.webgl');
-
-// 2. Kontroler Modal UI
 const modal = new ModalUI();
+const audio = new AudioManager();
 
-// 3. Semesta Scene
+// 2. Semesta Scene & Kabut Kosmis
 const scene = new THREE.Scene();
-
-// 4. Kabut Atmosferik Kosmis (Memberikan kedalaman perspektif tanpa batas)
 scene.fog = new THREE.FogExp2(0x04070d, 0.012);
 
-// 5. Modul Tata Cahaya Alami
+// 3. Modul Tata Cahaya Alami
 const environment = new Environment(scene);
 
-// 6. Gugusan Bintang Kosmis (1.400 Bintang 3D)
+// 4. Gugusan Bintang Kosmis & Lubang Hitam
 const starfield = new Starfield(scene);
-
-// 7. Singularitas Lubang Hitam di Dasar Semesta
 const blackHole = new BlackHole(scene);
 
-// 8. Kepulauan Terapung Raksasa (Archipelago)
+// 5. Kepulauan Terapung Raksasa (Archipelago)
 const island = new Island(scene);
 
-// 9. Fasilitas Bangunan & Vegetasi
+// 6. Fasilitas Bangunan & Vegetasi
 const structures = new Structures(island.container);
 const vegetation = new Vegetation(island.container);
 
-// 10. Partikel Kosmis & Air Terjun
+// 7. Partikel Kosmis & Air Terjun
 const particles = new Particles(island.container);
 const waterfall = new Waterfall(island.container);
 
-// 11. Kristal Penanda Titik Portofolio
+// 8. Kristal Penanda Titik Portofolio
 const markers = new Markers(island.container);
 
-// 12. Dinamika Udara (Burung & Drone)
+// 9. Dinamika Udara (Burung & Drone)
 const birds = new Birds(scene);
 const drone = new Drone(island.container);
 
-// 13. Karakter Pemain (Kirito)
+// 10. Karakter Pemain (Kirito) & Target Musuh (Dummy)
 const character = new Character(island.container);
+const enemy = new Enemy(island.container);
 
-// 14. Dimensi Layar Responsif
+// 11. Dimensi Layar Responsif
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
@@ -74,12 +72,12 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// 15. Kamera Perspektif
+// 12. Kamera Perspektif
 const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 250);
 camera.position.set(0, 4.2, 8.8);
 scene.add(camera);
 
-// 16. Kontrol Kamera Orbit Spring-Arm
+// 13. Kontrol Kamera Orbit Spring-Arm
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
@@ -91,7 +89,7 @@ controls.maxDistance = 45.0;
 const initialCharPos = character.getWorldPosition();
 controls.target.set(initialCharPos.x, initialCharPos.y + 0.8, initialCharPos.z);
 
-// 17. Renderer WebGL HD Sinematik
+// 14. Renderer WebGL HD Sinematik
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
   antialias: true,
@@ -106,64 +104,79 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.35;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-// 18. Elemen HUD Interaktif
+// 15. Elemen Antarmuka HUD
 const statusLocation = document.getElementById('status-location');
 const flightBadge = document.getElementById('flight-badge');
 const proximityPrompt = document.getElementById('proximity-prompt');
 const proximityTitle = document.getElementById('proximity-title');
+const audioToggleBtn = document.getElementById('audio-toggle-btn');
 let currentNearbyBeacon = null;
 
-// Koordinat Target Fast-Travel Sinematik untuk tiap pulau
+// Tombol Audio Mute
+audioToggleBtn.addEventListener('click', () => {
+  const isMuted = audio.toggleMute();
+  audioToggleBtn.textContent = isMuted ? '🔇' : '🔊';
+});
+
+// Koordinat Target Pendaratan untuk Fast-Travel
 const islandWaypoints = {
   world:    { x: 0,   y: 0.38, z: 0,   camY: 4.5, camDist: 9.0,  name: 'Central Plaza' },
-  about:    { x: -13, y: 0.2,  z: 0,   camY: 4.0, camDist: 8.5,  name: 'Cyber Sanctuary (West)' },
-  skills:   { x: 0,   y: 0.8,  z: -14, camY: 4.8, camDist: 9.5,  name: 'Skills Spire (North)' },
-  projects: { x: 13,  y: 0.1,  z: 0,   camY: 4.2, camDist: 8.8,  name: 'Oasis Forge (East)' },
+  about:    { x: -10, y: 0.2,  z: 0,   camY: 4.0, camDist: 8.5,  name: 'Cyber Sanctuary (West)' },
+  skills:   { x: 0,   y: 0.8,  z: -11, camY: 4.8, camDist: 9.5,  name: 'Skills Spire (North)' },
+  projects: { x: 10,  y: 0.1,  z: 0,   camY: 4.2, camDist: 8.8,  name: 'Oasis Forge (East)' },
   contact:  { x: 0,   y: 0.38, z: 3.2, camY: 3.8, camDist: 7.5,  name: 'Central Beacon' },
 };
 
-// 19. Navigasi Fast-Travel Sinematik dengan GSAP
+// 16. Fast-Travel Parabolik (Melengkung di Angkasa Tanpa Tembus Objek)
 let isCinematicFlying = false;
 
-function flyToIsland(targetKey) {
+function travelToIsland(targetKey) {
   const waypoint = islandWaypoints[targetKey];
   if (!waypoint) return;
 
   isCinematicFlying = true;
+  modal.close(); // Pastikan modal tertutup agar pemandangan penerbangan terlihat jelas
 
-  // Animasi menerbangkan karakter dan memindahkan target fokus kamera secara mulus
-  gsap.to(character.mesh.position, {
-    x: waypoint.x,
-    y: waypoint.y,
-    z: waypoint.z,
-    duration: 1.6,
-    ease: 'power3.inOut',
+  const startPos = character.mesh.position.clone();
+  const peakHeight = Math.max(startPos.y, waypoint.y) + 3.8; // Titik lengkung di udara
+
+  // Lintasan melengkung naik-turun karakter menggunakan objek interpolasi GSAP
+  const pathProgress = { p: 0 };
+  gsap.to(pathProgress, {
+    p: 1,
+    duration: 1.8,
+    ease: 'power2.inOut',
+    onUpdate: () => {
+      const p = pathProgress.p;
+      // Kurva Bezier Kuadratik
+      character.mesh.position.x = (1 - p) * startPos.x + p * waypoint.x;
+      character.mesh.position.z = (1 - p) * startPos.z + p * waypoint.z;
+      character.mesh.position.y = (1 - p) * (1 - p) * startPos.y + 2 * (1 - p) * p * peakHeight + p * p * waypoint.y;
+    },
+    onComplete: () => {
+      isCinematicFlying = false;
+    },
   });
 
+  // Kamera meluncur mengawal karakter ke sudut pandang ideal
   gsap.to(controls.target, {
     x: waypoint.x,
     y: waypoint.y + 0.8,
     z: waypoint.z,
-    duration: 1.6,
-    ease: 'power3.inOut',
+    duration: 1.8,
+    ease: 'power2.inOut',
   });
 
-  // Posisikan kamera di sudut pandang ideal pulau tersebut
   gsap.to(camera.position, {
     x: waypoint.x,
     y: waypoint.y + waypoint.camY,
     z: waypoint.z + waypoint.camDist,
-    duration: 1.8,
-    ease: 'power3.inOut',
-    onComplete: () => {
-      isCinematicFlying = false;
-      if (targetKey !== 'world') {
-        modal.open(targetKey);
-      }
-    },
+    duration: 2.0,
+    ease: 'power2.inOut',
   });
 }
 
+// Navigasi Atas HUD
 const navButtons = document.querySelectorAll('.nav-item');
 navButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -172,16 +185,35 @@ navButtons.forEach((btn) => {
     navButtons.forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
 
-    if (target === 'world') {
-      modal.close();
-      flyToIsland('world');
+    if (target === 'resume') {
+      modal.open('resume');
     } else {
-      flyToIsland(target);
+      travelToIsland(target);
     }
   });
 });
 
-// 20. Raycaster & Logika Klik vs Drag
+// 17. Pengendali Aksi Serangan & Deteksi Hit ke Musuh
+function executeAttackAction() {
+  const attacked = character.triggerAttack();
+  if (attacked) {
+    audio.playSlash();
+
+    // Periksa apakah Kirito berada dalam jangkauan tebasan musuh (radius 2.6 meter)
+    const charPos = character.getWorldPosition();
+    const enemyPos = enemy.getWorldPosition();
+    const distToEnemy = charPos.distanceTo(enemyPos);
+
+    if (distToEnemy <= 2.6 && !enemy.isDead) {
+      // Hit berhasil mengenai Cyber Dummy!
+      const damage = Math.floor(20 + Math.random() * 6); // 20 hingga 25 damage
+      enemy.takeDamage(damage);
+      audio.playHit();
+    }
+  }
+}
+
+// 18. Raycaster & Logika Klik vs Drag
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(-1000, -1000);
 let hoveredObject = null;
@@ -189,6 +221,10 @@ let isMouseDragging = false;
 let pointerDownCoord = { x: 0, y: 0 };
 
 window.addEventListener('pointerdown', (event) => {
+  // Abaikan input klik jika menyentuh tombol navigasi atau modal
+  if (event.target.closest('.hud-header') || event.target.closest('.modal-container') || event.target.closest('.mobile-controls')) {
+    return;
+  }
   isMouseDragging = false;
   pointerDownCoord.x = event.clientX;
   pointerDownCoord.y = event.clientY;
@@ -204,26 +240,76 @@ window.addEventListener('pointermove', (event) => {
   }
 });
 
-window.addEventListener('click', () => {
+window.addEventListener('click', (event) => {
   if (isMouseDragging) return;
+  if (event.target.closest('.hud-header') || event.target.closest('.modal-container') || event.target.closest('.mobile-controls')) {
+    return;
+  }
 
   if (hoveredObject) {
     const targetId = hoveredObject.userData.id;
-    flyToIsland(targetId);
-
-    navButtons.forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.target === targetId);
-    });
+    travelToIsland(targetId);
   } else if (currentNearbyBeacon) {
-    // Jika sedang berada dekat landmark dan klik layar, buka modal
     modal.open(currentNearbyBeacon.id);
   } else {
-    // Tebas pedang ganda
-    character.triggerAttack();
+    executeAttackAction();
   }
 });
 
-// 21. Loop Animasi Render (Tick)
+// 19. Event Binding On-Screen Touch Controls Ponsel
+const bindTouchBtn = (id, onStart, onEnd) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  el.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    onStart();
+  });
+  el.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    onEnd();
+  });
+};
+
+bindTouchBtn('btn-up', () => (character.keys.forward = true), () => (character.keys.forward = false));
+bindTouchBtn('btn-down', () => (character.keys.backward = true), () => (character.keys.backward = false));
+bindTouchBtn('btn-left', () => (character.keys.left = true), () => (character.keys.left = false));
+bindTouchBtn('btn-right', () => (character.keys.right = true), () => (character.keys.right = false));
+
+const btnAttack = document.getElementById('btn-attack');
+if (btnAttack) {
+  btnAttack.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    executeAttackAction();
+  });
+}
+
+const btnJump = document.getElementById('btn-jump');
+if (btnJump) {
+  btnJump.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (character.isFlying) {
+      character.keys.flyUp = true;
+    } else if (character.isGrounded) {
+      character.velocityY = character.jumpForce;
+      character.isGrounded = false;
+    }
+  });
+  btnJump.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    character.keys.flyUp = false;
+  });
+}
+
+const btnFly = document.getElementById('btn-fly');
+if (btnFly) {
+  btnFly.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    character.toggleFlight();
+  });
+}
+
+// 20. Loop Animasi Render (Tick)
 const clock = new THREE.Clock();
 let previousTime = 0;
 
@@ -232,7 +318,7 @@ const tick = () => {
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 
-  // Update elemen dunia semesta
+  // Animasi Semesta & Musuh
   starfield.update(elapsedTime);
   blackHole.update(elapsedTime, deltaTime);
   island.update(elapsedTime);
@@ -241,12 +327,12 @@ const tick = () => {
   markers.update(elapsedTime);
   birds.update(elapsedTime);
   drone.update(elapsedTime);
+  enemy.update(deltaTime, elapsedTime);
 
   // Pergerakan Karakter
   if (!isCinematicFlying) {
     character.update(deltaTime, camera, elapsedTime);
 
-    // Sinkronisasi kamera Spring-Arm mengikuti langkah Kirito
     const currentCharPos = character.getWorldPosition();
     const targetChest = new THREE.Vector3(currentCharPos.x, currentCharPos.y + 0.8, currentCharPos.z);
     const deltaTarget = targetChest.clone().sub(controls.target);
@@ -257,16 +343,15 @@ const tick = () => {
 
   controls.update();
 
-  // 22. Update Indikator HUD & Deteksi Jarak Spasial (Proximity Detection)
+  // Update Status HUD & Proximity Detection
   flightBadge.textContent = character.isFlying ? 'Flying (Alfheim)' : 'Walking Mode';
   flightBadge.style.color = character.isFlying ? '#38bdf8' : '#4ade80';
 
   const charPos = character.getWorldPosition();
 
-  // Identifikasi pulau terdekat untuk status lokasi
+  // Lokasi Terdekat
   let nearestZone = 'Cosmic Void';
   let minZoneDist = Infinity;
-
   Object.entries(islandWaypoints).forEach(([key, wp]) => {
     const dist = Math.hypot(charPos.x - wp.x, charPos.z - wp.z);
     if (dist < minZoneDist) {
@@ -276,14 +361,14 @@ const tick = () => {
   });
   statusLocation.textContent = nearestZone;
 
-  // Deteksi jarak ke kristal penanda terdekat (dalam radius 3.8 meter)
+  // Deteksi Jarak ke Kristal Penanda (Radius 3.6m)
   let foundNearby = null;
   markers.markersList.forEach((beacon) => {
     const beaconWorldPos = new THREE.Vector3();
     beacon.group.getWorldPosition(beaconWorldPos);
     const dist = charPos.distanceTo(beaconWorldPos);
 
-    if (dist < 3.8) {
+    if (dist < 3.6) {
       foundNearby = beacon.crystal.userData;
     }
   });
@@ -297,7 +382,7 @@ const tick = () => {
     proximityPrompt.classList.add('hidden');
   }
 
-  // 23. Raycasting Sorot Kursor
+  // Raycasting Kristal
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(markers.interactiveObjects, false);
 

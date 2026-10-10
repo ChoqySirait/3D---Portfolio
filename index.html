@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>KIRITO — 3D Solarpunk Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,24 +24,28 @@
       </div>
 
       <nav class="hud-nav">
-        <button class="nav-item active" data-target="world">World Hub</button>
-        <button class="nav-item" data-target="about">About (West)</button>
-        <button class="nav-item" data-target="skills">Skills (North)</button>
-        <button class="nav-item" data-target="projects">Projects (East)</button>
+        <button class="nav-item active" data-target="world">World</button>
+        <button class="nav-item" data-target="about">About</button>
+        <button class="nav-item" data-target="skills">Skills</button>
+        <button class="nav-item" data-target="projects">Projects</button>
         <button class="nav-item" data-target="contact">Connect</button>
+        <button class="nav-item resume-btn" data-target="resume">⚡ 2D Resume</button>
       </nav>
     </header>
 
-    <!-- 2D HUD: Status Realm & Mode Penjelajah (Pojok Kanan Atas) -->
+    <!-- 2D HUD: Status Realm & Audio Mute Button -->
     <div class="hud-status-card">
       <div class="status-indicator">
         <span class="status-pulse"></span>
         <span class="status-text" id="status-location">Central Plaza</span>
       </div>
-      <div class="flight-badge" id="flight-badge">Walking Mode</div>
+      <div class="status-row">
+        <div class="flight-badge" id="flight-badge">Walking Mode</div>
+        <button id="audio-toggle-btn" class="audio-btn" title="Toggle Sound">🔊</button>
+      </div>
     </div>
 
-    <!-- 2D HUD: Spatial Proximity Notification (Muncul otomatis saat Kirito mendekati beacon) -->
+    <!-- 2D HUD: Spatial Proximity Notification -->
     <div id="proximity-prompt" class="proximity-prompt hidden">
       <div class="proximity-icon">⚡</div>
       <div class="proximity-content">
@@ -50,10 +54,30 @@
       </div>
     </div>
 
-    <!-- 2D HUD: Petunjuk Kontrol Interaksi -->
-    <div class="hud-hint">
-      <span class="hint-icon">🌌</span>
-      <span><strong>WASD:</strong> Move | <strong>E:</strong> Flight Mode | <strong>Space/C:</strong> Up/Down | <strong>F / Click:</strong> Slash / Inspect | <strong>Drag/Scroll:</strong> Orbit & Zoom</span>
+    <!-- 2D HUD: Mobile On-Screen Touch Controls (Otomatis tampil pada smartphone) -->
+    <div id="mobile-controls" class="mobile-controls">
+      <!-- D-Pad Virtual Kiri -->
+      <div class="mobile-dpad">
+        <button class="dpad-btn up" id="btn-up">▲</button>
+        <div class="dpad-row">
+          <button class="dpad-btn left" id="btn-left">◀</button>
+          <button class="dpad-btn down" id="btn-down">▼</button>
+          <button class="dpad-btn right" id="btn-right">▶</button>
+        </div>
+      </div>
+
+      <!-- Action Buttons Kanan -->
+      <div class="mobile-actions">
+        <button class="action-btn fly-btn" id="btn-fly">FLY</button>
+        <button class="action-btn jump-btn" id="btn-jump">JUMP</button>
+        <button class="action-btn attack-btn" id="btn-attack">⚔️</button>
+      </div>
+    </div>
+
+    <!-- 2D HUD: Desktop Bottom Hint -->
+    <div class="hud-hint desktop-only">
+      <span class="hint-icon">⚔️</span>
+      <span><strong>WASD:</strong> Move | <strong>E:</strong> Flight | <strong>Space/C:</strong> Up/Down | <strong>F / Click:</strong> Slash Combo | <strong>Drag/Scroll:</strong> Orbit & Zoom</span>
     </div>
 
     <!-- 2D Modal Pop-Up Window -->

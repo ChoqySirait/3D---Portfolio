@@ -2,8 +2,7 @@ import { portfolioData } from '../data.js';
 
 /**
  * Kelas ModalUI
- * Mengelola pop-up jendela kaca modern (Glassmorphic Window) untuk menampilkan
- * detail proyek, daftar keahlian, dan informasi biodata secara interaktif.
+ * Mengelola pop-up jendela interaktif dan modul Recruiter 2D Resume Mode.
  */
 export default class ModalUI {
   constructor() {
@@ -16,17 +15,17 @@ export default class ModalUI {
   }
 
   bindEvents() {
-    // Tombol silang untuk menutup modal
+    // Tombol silang untuk menutup
     this.closeButton.addEventListener('click', () => this.close());
 
-    // Klik pada latar gelap luar untuk menutup modal
+    // Klik di latar belakang gelap luar untuk langsung menutup
     this.overlay.addEventListener('click', (event) => {
       if (event.target === this.overlay) {
         this.close();
       }
     });
 
-    // Tekan tombol ESC pada keyboard untuk keluar
+    // Tekan tombol ESC keyboard
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && !this.overlay.classList.contains('hidden')) {
         this.close();
@@ -45,6 +44,8 @@ export default class ModalUI {
       this.renderProjects();
     } else if (sectionKey === 'contact') {
       this.renderContact();
+    } else if (sectionKey === 'resume') {
+      this.renderFullResume();
     }
 
     this.overlay.classList.remove('hidden');
@@ -104,7 +105,7 @@ export default class ModalUI {
 
         const linkBtn = proj.url !== '#'
           ? `<a href="${proj.url}" target="_blank" rel="noopener noreferrer" class="project-link-btn">View on ${proj.linkType} &rarr;</a>`
-          : `<span class="project-link-disabled">Ongoing Development</span>`;
+          : `<span class="project-link-disabled">Ongoing Architecture</span>`;
 
         return `
           <div class="project-card">
@@ -126,7 +127,7 @@ export default class ModalUI {
 
   renderContact() {
     const profile = portfolioData.profile;
-    this.titleElement.textContent = "Get In Touch";
+    this.titleElement.textContent = "Connect & Collaborate";
 
     this.bodyElement.innerHTML = `
       <div class="modal-section contact-center">
@@ -138,6 +139,59 @@ export default class ModalUI {
           <a href="${profile.linkedin}" target="_blank" rel="noopener noreferrer" class="contact-btn linkedin-btn">
             LinkedIn Profile
           </a>
+        </div>
+      </div>
+    `;
+  }
+
+  renderFullResume() {
+    // 2D Recruiter One-Page Mode
+    const profile = portfolioData.profile;
+    const about = portfolioData.about;
+    const skills = portfolioData.skills;
+    const projects = portfolioData.projects;
+
+    this.titleElement.textContent = "Executive Portfolio Summary (2D View)";
+
+    let skillsHtml = '';
+    skills.categories.forEach((c) => {
+      skillsHtml += `<strong>${c.name}:</strong> ${c.items.join(', ')}<br>`;
+    });
+
+    let projectsHtml = '';
+    projects.list.forEach((p) => {
+      projectsHtml += `
+        <div style="margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <h4 style="color: #38bdf8;">${p.title} <span style="font-size:0.75rem; color:#94a3b8;">(${p.category})</span></h4>
+          <p style="font-size:0.86rem; color:#cbd5e1; margin:4px 0;">${p.description}</p>
+          <p style="font-size:0.82rem; color:#4ade80;"><strong>Impact:</strong> ${p.impact}</p>
+        </div>
+      `;
+    });
+
+    this.bodyElement.innerHTML = `
+      <div class="modal-section" style="gap: 20px;">
+        <div>
+          <h3 style="color:#f8fafc; font-size:1.3rem;">${profile.name} (${profile.brand})</h3>
+          <p style="color:#38bdf8; font-weight:600;">${profile.headline}</p>
+          <p style="color:#94a3b8; font-size:0.85rem; margin-top:4px;">${profile.status}</p>
+        </div>
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1);" />
+        <div>
+          <h4 style="color:#f8fafc; margin-bottom:6px;">About</h4>
+          <p style="font-size:0.9rem; color:#cbd5e1; line-height:1.6;">${about.description}</p>
+        </div>
+        <div>
+          <h4 style="color:#f8fafc; margin-bottom:6px;">Tech Stack Overview</h4>
+          <div style="font-size:0.86rem; color:#cbd5e1; line-height:1.8;">${skillsHtml}</div>
+        </div>
+        <div>
+          <h4 style="color:#f8fafc; margin-bottom:10px;">Key Engineering Projects</h4>
+          ${projectsHtml}
+        </div>
+        <div style="display:flex; gap:12px; margin-top:10px;">
+          <a href="${profile.github}" target="_blank" rel="noopener noreferrer" class="contact-btn github-btn" style="padding:8px 18px; font-size:0.82rem;">GitHub</a>
+          <a href="${profile.linkedin}" target="_blank" rel="noopener noreferrer" class="contact-btn linkedin-btn" style="padding:8px 18px; font-size:0.82rem;">LinkedIn</a>
         </div>
       </div>
     `;
