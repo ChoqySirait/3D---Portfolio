@@ -1,85 +1,80 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import Environment from './world/Environment.js';
+import Island from './world/Island.js';
 
-// 1. Kanvas HTML
+// 1. Inisialisasi Elemen Kanvas
 const canvas = document.querySelector('canvas.webgl');
 
-// 2. Scene (Semesta 3D)
+// 2. Inisialisasi Scene
 const scene = new THREE.Scene();
 
-// 3. Objek Percobaan (Placeholder Pulau Sederhana)
-const geometry = new THREE.CylinderGeometry(3, 2, 0.8, 8); // Bentuk dasar mirip pulau segi delapan
-const material = new THREE.MeshStandardMaterial({ 
-  color: 0x4ade80, 
-  flatShading: true 
-});
-const baseIsland = new THREE.Mesh(geometry, material);
-scene.add(baseIsland);
+// 3. Muat Modul Tata Cahaya & Lingkungan
+const environment = new Environment(scene);
 
-// 4. Pencahayaan
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-scene.add(ambientLight);
+// 4. Muat Modul Pulau Melayang
+const island = new Island(scene);
 
-const directionalLight = new THREE.DirectionalLight(0xffeedd, 1.5);
-directionalLight.position.set(5, 10, 7);
-scene.add(directionalLight);
-
-// 5. Ukuran Layar Responsif
+// 5. Pengaturan Dimensi Layar Responsif
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
 
 window.addEventListener('resize', () => {
-  // Perbarui ukuran layar
+  // Update ukuran layar
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Perbarui rasio kamera
+  // Update rasio kamera
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Perbarui ukuran renderer
+  // Update ukuran canvas renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// 6. Kamera
+// 6. Kamera Perspektif
 const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 100);
-camera.position.set(8, 6, 8);
+camera.position.set(10, 8, 10); // Sudut pandang isometrik dari atas samping
 scene.add(camera);
 
-// 7. Kontrol Kamera (OrbitControls untuk drag & putar layar)
+// 7. Kontrol Kamera (OrbitControls)
 const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true; // Gerakan rotasi terasa halus
-controls.maxPolarAngle = Math.PI / 2 - 0.05; // Mencegah kamera masuk ke bawah tanah
+controls.enableDamping = true; // Gerakan rotasi halus/berbobot
+controls.dampingFactor = 0.05;
+controls.maxPolarAngle = Math.PI / 2 - 0.05; // Mencegah kamera menukik ke bawah garis horizontal dasar
+controls.minDistance = 5;  // Batas zoom terdekat
+controls.maxDistance = 25; // Batas zoom terjauh
 
-// 8. Renderer
+// 8. Renderer WebGL dengan Shadow Map Aktif
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
   antialias: true,
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setClearColor(0x0f141c);
+renderer.setClearColor(0x0f141c); // Warna latar belakang gelap kosmis
+renderer.shadowMap.enabled = true; // Aktifkan kalkulasi bayangan
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Jenis bayangan bertepi halus
 
-// 9. Loop Animasi (Tick)
+// 9. Loop Animasi Render (Tick)
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Animasi mengapung halus (Bobbing effect sederhana)
-  baseIsland.position.y = Math.sin(elapsedTime * 1.5) * 0.15;
-  baseIsland.rotation.y = elapsedTime * 0.1;
+  // Animasi mengapung dinamis pada pulau
+  island.update(elapsedTime);
 
-  // Update controls
+  // Perbarui kalkulasi kontrol kamera
   controls.update();
 
-  // Render scene
+  // Render frame ke layar
   renderer.render(scene, camera);
 
-  // Panggil frame berikutnya
+  // Minta browser menjalankan tick pada frame berikutnya (60-120 FPS)
   window.requestAnimationFrame(tick);
 };
 
